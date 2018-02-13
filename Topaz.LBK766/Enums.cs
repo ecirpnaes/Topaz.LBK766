@@ -35,5 +35,11 @@
             InsideSigWindow = 0,
             OutsideSigWindow = 1
         }
+
+        public enum CoordinateEnum : short
+        {
+            Logical = 0,
+            Lcd = 1
+        }
     }
 }
