@@ -109,6 +109,9 @@ namespace Topaz.LBK766
                     sigPlusNET.SetJustifyMode(5);
                     var image = sigPlusNET.GetSigImage();
                     image.Save(GetFileNameAndPath(), ImageFormat.Jpeg);
+                    sigPlusNET.SetJustifyMode(0);
+
+                    sigPlusNET.ClearTablet();
 
                     sigPlusNET.SetTabletState((int) Enums.TabletStateEnum.Capture);
                     sigPlusNET.LCDWriteString(0, 2, 63, 180, new Font("Arial", 10.0F, FontStyle.Regular), "Thank You For Signing!" + Environment.NewLine + "Signature saved to: " + Environment.NewLine + GetFileNameAndPath());
