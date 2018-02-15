@@ -101,7 +101,8 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="img4x5_new.bmp" />
+    <None Include="imgThanks.bmp" />
+    <None Include="imgOverlay.bmp" />
     <None Include="Resources\img4x5_new.bmp" />
     <None Include="Resources\SigImg.bmp" />
   </ItemGroup>

@@ -67,7 +67,8 @@ namespace Topaz.LBK766
             sigPlusNET.SetLCDCaptureMode((int) LCDCaptureModes.LCDCapInk);
 
             // load bmp into background memory for display on lcd
-            sigPlusNET.LCDSendGraphic((int) Enums.DestinationEnum.Background, (byte) Enums.LcdWriteStringEnum.WriteOpaque, 0, 0, new Bitmap(Resources.img4x5_new));
+            sigPlusNET.LCDSendGraphic((int) Enums.DestinationEnum.Background, (byte) Enums.LcdWriteStringEnum.WriteOpaque, 0, 0, new Bitmap(Resources.imgOverlay));
+            //sigPlusNET.LCDSendGraphic((int)Enums.DestinationEnum.Background, (byte)Enums.LcdWriteStringEnum.WriteOpaque, 0, 0, new Bitmap(Resources.imgThanks));
 
             // bring stored background image to foreground
             sigPlusNET.LCDRefresh((byte) Enums.LcdRefreshModeEnum.WriteOpaque, EntireWindow);
@@ -119,9 +120,9 @@ namespace Topaz.LBK766
                         image.Save(GetFileNameAndPath(), ImageFormat.Jpeg);
                         sigPlusNET.SetJustifyMode(0);
 
-                        // Set the tablet back to capture state and send a response string to the user.
-                        sigPlusNET.SetTabletState((int) Enums.TabletStateEnum.Capture);
-                        sigPlusNET.LCDWriteString(0, 2, 63, 180, _fontRegular, "Thank You For Signing!");
+                        // Set the tablet back to capture state and show the uer the thank you image
+                        sigPlusNET.SetTabletState((int) Enums.TabletStateEnum.Capture);                        
+                        sigPlusNET.LCDSendGraphic((int)Enums.DestinationEnum.Foreground, (byte)Enums.LcdWriteStringEnum.WriteOpaque, 0, 0, new Bitmap(Resources.imgThanks));
                         Thread.Sleep(4500);
 
                         ResetTabletForSignature();

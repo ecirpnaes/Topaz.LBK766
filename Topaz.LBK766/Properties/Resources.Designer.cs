@@ -63,9 +63,19 @@ namespace Topaz.LBK766.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap img4x5_new {
+        internal static System.Drawing.Bitmap imgOverlay {
             get {
-                object obj = ResourceManager.GetObject("img4x5_new", resourceCulture);
+                object obj = ResourceManager.GetObject("imgOverlay", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap imgThanks {
+            get {
+                object obj = ResourceManager.GetObject("imgThanks", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
