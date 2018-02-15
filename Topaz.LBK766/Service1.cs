@@ -24,6 +24,8 @@ namespace Topaz.LBK766
         private Rectangle InkableSigWindow;
         private Rectangle ClearButton;
         private Rectangle AcceptButton;
+        private Font _fontRegular;
+        private Font _fontLarger;
 
         public SigCapture()
         {
@@ -41,11 +43,13 @@ namespace Topaz.LBK766
         private void StartService()
         {
             EntireWindow = new Rectangle(0, 0, 320, 240);
-            SigWindow = new Rectangle(0, 150, 320, 90);
+            SigWindow = new Rectangle(3, 150, 320, 90);
             InkableLcdWindow = new Rectangle(3, 178, 309, 51);
-            InkableSigWindow = new Rectangle(12, 180, 318, 55);
+            InkableSigWindow = new Rectangle(5, 180, 318, 55);
             ClearButton = new Rectangle(32, 155, 33, 13);
             AcceptButton = new Rectangle(254, 155, 33, 13);
+            _fontRegular = new Font("Arial", 10.0F, FontStyle.Regular);
+            _fontLarger = new Font("Arial", 12.0F, FontStyle.Regular);
 
             sigPlusNET = new SigPlusNET2();
             sigPlusNET.CreateControl();
@@ -53,87 +57,124 @@ namespace Topaz.LBK766
 
             sigPlusNET.SetTabletState((int) Enums.TabletStateEnum.Capture); // Enables tablet to access the COM or USB port to capture signatures or not
             sigPlusNET.LCDRefresh((byte) Enums.LcdRefreshModeEnum.Clear, EntireWindow); //Refresh entire LCD
-            sigPlusNET.ClearTablet(); //clears the SigPlus object
+            sigPlusNET.ClearTablet(); // Clear everything out of memory
 
-            // adds the hotpots on lcd
+            // add button hotpots on lcd
             sigPlusNET.KeyPadAddHotSpot(BUTTON_CLEAR, (short) Enums.CoordinateEnum.Lcd, ClearButton);
             sigPlusNET.KeyPadAddHotSpot(BUTTON_ACCEPT, (short) Enums.CoordinateEnum.Lcd, AcceptButton);
 
-            // load the bitmap
-            var img4x5 = new Bitmap(Resources.img4x5_new);
-            sigPlusNET.SetLCDCaptureMode((int) LCDCaptureModes.LCDCapInk); //Sets up LCD to retain text/graphics/ink
-            sigPlusNET.LCDSendGraphic((int) Enums.DestinationEnum.Background, (byte) Enums.LcdWriteStringEnum.WriteOpaque, 0, 0, img4x5); //load bmp into background memory for display on lcd
+            // Set up LCD to retain text/graphics/ink
+            sigPlusNET.SetLCDCaptureMode((int) LCDCaptureModes.LCDCapInk);
+
+            // load bmp into background memory for display on lcd
+            sigPlusNET.LCDSendGraphic((int) Enums.DestinationEnum.Background, (byte) Enums.LcdWriteStringEnum.WriteOpaque, 0, 0, new Bitmap(Resources.img4x5_new));
 
             // bring stored background image to foreground
             sigPlusNET.LCDRefresh((byte) Enums.LcdRefreshModeEnum.WriteOpaque, EntireWindow);
 
-            sigPlusNET.LCDSetWindow(InkableLcdWindow); //Permits only the section on lcd to ink
-            sigPlusNET.SetSigWindow((short) Enums.CoordinateEnum.Lcd, InkableSigWindow); //permits ink only in the section specified in sigplus object
+            // Define the Inkable sections, and set the table to capture mode
+            sigPlusNET.LCDSetWindow(InkableLcdWindow);
+            sigPlusNET.SetSigWindow((short) Enums.CoordinateEnum.Lcd, InkableSigWindow);
             sigPlusNET.SetLCDCaptureMode((int) LCDCaptureModes.LCDCapInk);
+
             Application.Run();
         }
 
         protected override void OnStop()
         {
+            sigPlusNET.ClearTablet(); // Clear everything out of memory
             sigPlusNET.LCDRefresh((byte) Enums.LcdRefreshModeEnum.Clear, EntireWindow);
             Application.ExitThread();
         }
 
         private void OnPenUp(object sender, EventArgs e)
         {
-            if ( sigPlusNET.KeyPadQueryHotSpot(BUTTON_CLEAR) > 0 ) // Clear chosen
+            if ( ButtonWasPressed(BUTTON_CLEAR) )
             {
+                ShowButtonPressed(ClearButton);
                 sigPlusNET.ClearSigWindow((short) Enums.ClearSigEnum.OutsideSigWindow);
                 sigPlusNET.ClearTablet();
-                sigPlusNET.LCDRefresh((byte) Enums.LcdRefreshModeEnum.Complement, ClearButton); //invert px at CLEAR so user knows its been tapped
-                Thread.Sleep(300);
-                sigPlusNET.LCDRefresh((byte) Enums.LcdRefreshModeEnum.WriteOpaque, SigWindow); //refresh lcd with background ONLY at bottom of LCD
+
+                sigPlusNET.LCDRefresh((byte) Enums.LcdRefreshModeEnum.WriteOpaque, SigWindow);
                 sigPlusNET.ClearSigWindow((short) Enums.ClearSigEnum.OutsideSigWindow);
             }
 
-            if ( sigPlusNET.KeyPadQueryHotSpot(BUTTON_ACCEPT) > 0 ) // OK chosen
+            if ( ButtonWasPressed(BUTTON_ACCEPT) )
             {
+                ShowButtonPressed(AcceptButton);
                 sigPlusNET.ClearSigWindow((short) Enums.ClearSigEnum.OutsideSigWindow);
-                sigPlusNET.LCDRefresh((byte) Enums.LcdRefreshModeEnum.Complement, AcceptButton);
-                Thread.Sleep(300);
-                //sigPlusNET.LCDRefresh((byte) Enums.LcdRefreshModeEnum.Complement, AcceptButton);
 
-                if ( sigPlusNET.NumberOfTabletPoints() > 0 ) //if there is a signature
+                if ( HasSignature() )
                 {
-                    sigPlusNET.LCDRefresh((byte) Enums.LcdRefreshModeEnum.Clear, EntireWindow);
-                    sigPlusNET.SetTabletState((int) Enums.TabletStateEnum.Disabled);
+                    try
+                    {
+                        sigPlusNET.LCDRefresh((byte) Enums.LcdRefreshModeEnum.Clear, EntireWindow);
+                        sigPlusNET.SetTabletState((int) Enums.TabletStateEnum.Disabled);
 
-                    // Save the image
-                    sigPlusNET.SetImageXSize(500);
-                    sigPlusNET.SetImageYSize(150);
-                    sigPlusNET.SetJustifyMode(5);
-                    var image = sigPlusNET.GetSigImage();
-                    image.Save(GetFileNameAndPath(), ImageFormat.Jpeg);
-                    sigPlusNET.SetJustifyMode(0);
+                        // Save the image
+                        sigPlusNET.SetImageXSize(500);
+                        sigPlusNET.SetImageYSize(150);
+                        sigPlusNET.SetJustifyMode(5);
+                        var image = sigPlusNET.GetSigImage();
+                        image.Save(GetFileNameAndPath(), ImageFormat.Jpeg);
+                        sigPlusNET.SetJustifyMode(0);
 
-                    sigPlusNET.ClearTablet();
+                        // Set the tablet back to capture state and send a response string to the user.
+                        sigPlusNET.SetTabletState((int) Enums.TabletStateEnum.Capture);
+                        sigPlusNET.LCDWriteString(0, 2, 63, 180, _fontRegular, "Thank You For Signing!");
+                        Thread.Sleep(4500);
 
-                    sigPlusNET.SetTabletState((int) Enums.TabletStateEnum.Capture);
-                    sigPlusNET.LCDWriteString(0, 2, 63, 180, new Font("Arial", 10.0F, FontStyle.Regular), "Thank You For Signing!" + Environment.NewLine + "Signature saved to: " + Environment.NewLine + GetFileNameAndPath());
-                    Thread.Sleep(4500);
+                        ResetTabletForSignature();
+                    }
+                    catch (Exception ex)
+                    {
+                        // Set the tablet back to capture state and send a response string to the user.
+                        sigPlusNET.SetTabletState((int) Enums.TabletStateEnum.Capture);
+                        sigPlusNET.LCDWriteString(0, 2, 10, 10, _fontRegular, "Error: " + ex.Message);
+                        Thread.Sleep(9000);
 
-                    sigPlusNET.LCDRefresh((byte) Enums.LcdRefreshModeEnum.WriteOpaque, SigWindow); //refresh lcd with background ONLY at bottom of LCD
-                    sigPlusNET.ClearSigWindow((short) Enums.ClearSigEnum.OutsideSigWindow);
-
-                    //bring stored background image to foreground
-                    sigPlusNET.LCDRefresh((byte) Enums.LcdRefreshModeEnum.WriteOpaque, EntireWindow);
-                    sigPlusNET.SetTabletState((int) Enums.TabletStateEnum.Capture);
+                        ResetTabletForSignature();
+                    }
                 }
                 else
                 {
-                    sigPlusNET.LCDWriteString(0, 2, 46, 186, new Font("Arial", 12.0F, FontStyle.Regular), "Please Sign Before Continuing...");
+                    sigPlusNET.LCDWriteString(0, 2, 46, 186, _fontLarger, "Please Sign Before Continuing...");
                     Thread.Sleep(2000);
                     sigPlusNET.LCDRefresh((byte) Enums.LcdRefreshModeEnum.WriteOpaque, SigWindow);
-                    sigPlusNET.SetLCDCaptureMode(2);
+                    sigPlusNET.SetLCDCaptureMode((int) LCDCaptureModes.LCDCapInk);
                 }
             }
 
             sigPlusNET.ClearSigWindow((short) Enums.ClearSigEnum.OutsideSigWindow);
+        }
+
+        private void ResetTabletForSignature()
+        {
+            sigPlusNET.LCDRefresh((byte) Enums.LcdRefreshModeEnum.WriteOpaque, SigWindow); //refresh lcd with background ONLY at bottom of LCD
+            sigPlusNET.ClearSigWindow((short) Enums.ClearSigEnum.OutsideSigWindow);
+
+            //bring stored background image to foreground
+            sigPlusNET.LCDRefresh((byte) Enums.LcdRefreshModeEnum.WriteOpaque, EntireWindow);
+            sigPlusNET.SetTabletState((int) Enums.TabletStateEnum.Capture);
+
+            // clear cached image from background memory
+            sigPlusNET.ClearTablet();
+        }
+
+        private bool ButtonWasPressed(short buttonKey)
+        {
+            return sigPlusNET.KeyPadQueryHotSpot(buttonKey) > 0;
+        }
+
+        public bool HasSignature()
+        {
+            return sigPlusNET.NumberOfTabletPoints() > 0;
+        }
+
+        private void ShowButtonPressed(Rectangle button)
+        {
+            sigPlusNET.LCDRefresh((byte) Enums.LcdRefreshModeEnum.Complement, button); //invert px at button location so user knows its been tapped
+            Thread.Sleep(300);
         }
 
         private static string GetFileNameAndPath()

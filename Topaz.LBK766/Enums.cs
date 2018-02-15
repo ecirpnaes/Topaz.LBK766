@@ -12,10 +12,10 @@
 
         public enum LcdRefreshModeEnum
         {
-            Clear = 0,
-            Complement = 1,
-            WriteOpaque = 2,
-            WriteTransparent = 4
+            Clear = 0, // display is cleared at the specified location
+            Complement = 1, //complements display at the specified location
+            WriteOpaque = 2, //transfers contents of the background memory to the LCD display, overwriting the content
+            WriteTransparent = 4 //transfers contents of the background memory to the LCD display and combined in the contents of the LCD display
         }
 
         public enum DestinationEnum
