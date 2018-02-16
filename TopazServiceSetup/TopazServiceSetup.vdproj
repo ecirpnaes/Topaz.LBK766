@@ -276,7 +276,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Topaz LBK766 Service"
         "ProductCode" = "8:{6D27A5F9-3104-4086-83CB-1ABEBA0165C5}"
-        "PackageCode" = "8:{9F20978B-5F0C-43A7-B519-E53BB76D7C81}"
+        "PackageCode" = "8:{A623ED52-9241-4A37-8E72-4F92CCCFD4C5}"
         "UpgradeCode" = "8:{32A904FA-6B2A-47C0-B694-ED95AE120064}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"

@@ -6,8 +6,10 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.ServiceProcess;
 using System.Threading;
+using System.Timers;
 using System.Windows.Forms;
 using Topaz.LBK766.Properties;
+using Timer = System.Timers.Timer;
 
 #endregion
 
@@ -26,6 +28,8 @@ namespace Topaz.LBK766
         private Rectangle AcceptButton;
         private Font _fontRegular;
         private Font _fontLarger;
+        private Timer _timer;
+        private bool _serviceStartedAndTabletConnected;
 
         public SigCapture()
         {
@@ -34,14 +38,23 @@ namespace Topaz.LBK766
 
         protected override void OnStart(string[] args)
         {
-            var thread = new Thread(StartService);
-            thread.SetApartmentState(ApartmentState.STA);
-            thread.IsBackground = true;
-            thread.Start();
+            var currentDomain = AppDomain.CurrentDomain;
+            currentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            sigPlusNET = new SigPlusNET2();
+            InitTimer();
+        }
+
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            Stop();
+            Environment.Exit(1);
         }
 
         private void StartService()
         {
+            sigPlusNET = new SigPlusNET2();
+            sigPlusNET.CreateControl();
+
             EntireWindow = new Rectangle(0, 0, 320, 240);
             SigWindow = new Rectangle(3, 150, 320, 90);
             InkableLcdWindow = new Rectangle(3, 178, 309, 51);
@@ -51,8 +64,6 @@ namespace Topaz.LBK766
             _fontRegular = new Font("Arial", 10.0F, FontStyle.Regular);
             _fontLarger = new Font("Arial", 12.0F, FontStyle.Regular);
 
-            sigPlusNET = new SigPlusNET2();
-            sigPlusNET.CreateControl();
             sigPlusNET.PenUp += OnPenUp;
 
             sigPlusNET.SetTabletState((int) Enums.TabletStateEnum.Capture); // Enables tablet to access the COM or USB port to capture signatures or not
@@ -68,7 +79,6 @@ namespace Topaz.LBK766
 
             // load bmp into background memory for display on lcd
             sigPlusNET.LCDSendGraphic((int) Enums.DestinationEnum.Background, (byte) Enums.LcdWriteStringEnum.WriteOpaque, 0, 0, new Bitmap(Resources.imgOverlay));
-            //sigPlusNET.LCDSendGraphic((int)Enums.DestinationEnum.Background, (byte)Enums.LcdWriteStringEnum.WriteOpaque, 0, 0, new Bitmap(Resources.imgThanks));
 
             // bring stored background image to foreground
             sigPlusNET.LCDRefresh((byte) Enums.LcdRefreshModeEnum.WriteOpaque, EntireWindow);
@@ -121,8 +131,8 @@ namespace Topaz.LBK766
                         sigPlusNET.SetJustifyMode(0);
 
                         // Set the tablet back to capture state and show the uer the thank you image
-                        sigPlusNET.SetTabletState((int) Enums.TabletStateEnum.Capture);                        
-                        sigPlusNET.LCDSendGraphic((int)Enums.DestinationEnum.Foreground, (byte)Enums.LcdWriteStringEnum.WriteOpaque, 0, 0, new Bitmap(Resources.imgThanks));
+                        sigPlusNET.SetTabletState((int) Enums.TabletStateEnum.Capture);
+                        sigPlusNET.LCDSendGraphic((int) Enums.DestinationEnum.Foreground, (byte) Enums.LcdWriteStringEnum.WriteOpaque, 0, 0, new Bitmap(Resources.imgThanks));
                         Thread.Sleep(4500);
 
                         ResetTabletForSignature();
@@ -184,6 +194,41 @@ namespace Topaz.LBK766
             if ( !folder.EndsWith("\\") ) folder += "\\";
             if ( !Directory.Exists(folder) ) Directory.CreateDirectory(folder);
             return folder + Util.GetValueFromConfigFile(Util.IMAGE_SAVE_FILENAME);
+        }
+
+        private void InitTimer()
+        {
+            if ( _timer == null )
+            {
+                _timer = new Timer();
+                _timer.Elapsed += CheckForTablet;
+                _timer.Interval = TimeSpan.FromSeconds(30).TotalMilliseconds;
+                _timer.Start();
+                CheckForTablet(null, null);
+            }
+        }
+
+        private void CheckForTablet(object sender, ElapsedEventArgs e)
+        {
+            // if no tablet connected, set the flag and exit
+            if ( !sigPlusNET.TabletConnectQuery() )
+            {
+                _serviceStartedAndTabletConnected = false;
+                return;
+            }
+
+            // if service is already running and tablet already connected, exit
+            if ( _serviceStartedAndTabletConnected ) return;
+
+            // start the service and init the tablet
+            if ( sigPlusNET.TabletConnectQuery() )
+            {
+                _serviceStartedAndTabletConnected = true;
+                var thread = new Thread(StartService);
+                thread.SetApartmentState(ApartmentState.STA);
+                thread.IsBackground = true;
+                thread.Start();
+            }
         }
     }
 }
