@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             this.serviceProcessInstaller1 = new System.ServiceProcess.ServiceProcessInstaller();
-            this.serviceInstaller1 = new System.ServiceProcess.ServiceInstaller();
+            this.TopazTLBK766BHSBR = new System.ServiceProcess.ServiceInstaller();
             // 
             // serviceProcessInstaller1
             // 
@@ -37,23 +37,24 @@
             this.serviceProcessInstaller1.Password = null;
             this.serviceProcessInstaller1.Username = null;
             // 
-            // serviceInstaller1
+            // TopazTLBK766BHSBR
             // 
-            this.serviceInstaller1.Description = "Topaz Service for LBK766";
-            this.serviceInstaller1.DisplayName = "Topaz Service for LBK766";
-            this.serviceInstaller1.ServiceName = "Topaz.LBK766";
+            this.TopazTLBK766BHSBR.Description = "Topaz T-LBK766-BHSB-R";
+            this.TopazTLBK766BHSBR.DisplayName = "Topaz T-LBK766-BHSB-R";
+            this.TopazTLBK766BHSBR.ServiceName = "Topaz.T-LBK766-BHSB-R";
+            this.TopazTLBK766BHSBR.StartType = System.ServiceProcess.ServiceStartMode.Automatic;
             // 
             // ProjectInstaller
             // 
             this.Installers.AddRange(new System.Configuration.Install.Installer[] {
             this.serviceProcessInstaller1,
-            this.serviceInstaller1});
+            this.TopazTLBK766BHSBR});
 
         }
 
         #endregion
 
         private System.ServiceProcess.ServiceProcessInstaller serviceProcessInstaller1;
-        private System.ServiceProcess.ServiceInstaller serviceInstaller1;
+        private System.ServiceProcess.ServiceInstaller TopazTLBK766BHSBR;
     }
 }

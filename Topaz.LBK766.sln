@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Topaz.LBK766", "Topaz.LBK766\Topaz.LBK766.csproj", "{3F20AA39-9EE5-43AC-BEEA-0B29715806B5}"
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "TopazServiceSetup", "TopazServiceSetup\TopazServiceSetup.vdproj", "{3C64EF55-8E2B-46D3-AA21-E60193ED9FEA}"
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "T-LBK766-BHSB-R-Setup", "T-LBK766-BHSB-R-Setup\T-LBK766-BHSB-R-Setup.vdproj", "{D84A29EB-0E8A-4066-9642-DCE1EC482169}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,8 +17,8 @@ Global
 		{3F20AA39-9EE5-43AC-BEEA-0B29715806B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3F20AA39-9EE5-43AC-BEEA-0B29715806B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3F20AA39-9EE5-43AC-BEEA-0B29715806B5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3C64EF55-8E2B-46D3-AA21-E60193ED9FEA}.Debug|Any CPU.ActiveCfg = Debug
-		{3C64EF55-8E2B-46D3-AA21-E60193ED9FEA}.Release|Any CPU.ActiveCfg = Release
+		{D84A29EB-0E8A-4066-9642-DCE1EC482169}.Debug|Any CPU.ActiveCfg = Debug
+		{D84A29EB-0E8A-4066-9642-DCE1EC482169}.Release|Any CPU.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
