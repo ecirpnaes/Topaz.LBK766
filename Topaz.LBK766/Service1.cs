@@ -29,7 +29,9 @@ namespace Topaz.LBK766
         private Font _fontRegular;
         private Font _fontLarger;
         private Timer _timer;
+        private Timer _backLightTimer;
         private bool _serviceStartedAndTabletConnected;
+        private bool _canTurnLcdScreenOff = true;
 
         public SigCapture()
         {
@@ -42,8 +44,9 @@ namespace Topaz.LBK766
             currentDomain.UnhandledException += CurrentDomain_UnhandledException;
             sigPlusNET = new SigPlusNET2();
             InitTimer();
+            InitBacklightTimer();
         }
-
+       
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             Stop();
@@ -65,6 +68,7 @@ namespace Topaz.LBK766
             _fontLarger = new Font("Arial", 12.0F, FontStyle.Regular);
 
             sigPlusNET.PenUp += OnPenUp;
+            sigPlusNET.PenDown += OnPenDown;
 
             sigPlusNET.SetTabletState((int) Enums.TabletStateEnum.Capture); // Enables tablet to access the COM or USB port to capture signatures or not
             sigPlusNET.LCDRefresh((byte) Enums.LcdRefreshModeEnum.Clear, EntireWindow); //Refresh entire LCD
@@ -87,10 +91,10 @@ namespace Topaz.LBK766
             sigPlusNET.LCDSetWindow(InkableLcdWindow);
             sigPlusNET.SetSigWindow((short) Enums.CoordinateEnum.Lcd, InkableSigWindow);
             sigPlusNET.SetLCDCaptureMode((int) LCDCaptureModes.LCDCapInk);
-
+            _canTurnLcdScreenOff = true;
             Application.Run();
         }
-
+        
         protected override void OnStop()
         {
             sigPlusNET.ClearTablet(); // Clear everything out of memory
@@ -98,9 +102,16 @@ namespace Topaz.LBK766
             Application.ExitThread();
         }
 
-        private void OnPenUp(object sender, EventArgs e)
+        private void OnPenDown(object sender, EventArgs e)
         {
-            if ( ButtonWasPressed(BUTTON_CLEAR) )
+            _canTurnLcdScreenOff = false;
+            InitBacklightTimer();
+            this.ToggleLcdBacklight(Enums.LcdBackLight.LightOn);
+        }
+
+        private void OnPenUp(object sender, EventArgs e)
+        {            
+            if (ButtonWasPressed(BUTTON_CLEAR))
             {
                 ShowButtonPressed(ClearButton);
                 sigPlusNET.ClearSigWindow((short) Enums.ClearSigEnum.OutsideSigWindow);
@@ -110,12 +121,12 @@ namespace Topaz.LBK766
                 sigPlusNET.ClearSigWindow((short) Enums.ClearSigEnum.OutsideSigWindow);
             }
 
-            if ( ButtonWasPressed(BUTTON_ACCEPT) )
+            if (ButtonWasPressed(BUTTON_ACCEPT))
             {
                 ShowButtonPressed(AcceptButton);
                 sigPlusNET.ClearSigWindow((short) Enums.ClearSigEnum.OutsideSigWindow);
 
-                if ( HasSignature() )
+                if (HasSignature())
                 {
                     try
                     {
@@ -157,6 +168,8 @@ namespace Topaz.LBK766
             }
 
             sigPlusNET.ClearSigWindow((short) Enums.ClearSigEnum.OutsideSigWindow);
+            _canTurnLcdScreenOff = true;
+            InitBacklightTimer();
         }
 
         private void ResetTabletForSignature()
@@ -191,14 +204,14 @@ namespace Topaz.LBK766
         private static string GetFileNameAndPath()
         {
             var folder = Util.GetValueFromConfigFile(Util.KEY_IMAGE_SAVE_PATH);
-            if ( !folder.EndsWith("\\") ) folder += "\\";
-            if ( !Directory.Exists(folder) ) Directory.CreateDirectory(folder);
+            if (!folder.EndsWith("\\")) folder += "\\";
+            if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
             return folder + Util.GetValueFromConfigFile(Util.IMAGE_SAVE_FILENAME);
         }
 
         private void InitTimer()
         {
-            if ( _timer == null )
+            if (_timer == null)
             {
                 _timer = new Timer();
                 _timer.Elapsed += CheckForTablet;
@@ -208,20 +221,48 @@ namespace Topaz.LBK766
             }
         }
 
+        private void InitBacklightTimer()
+        {
+            if (_backLightTimer == null)
+            {
+                _backLightTimer = new Timer();
+            }
+            else
+            {
+                _backLightTimer.Stop();
+            }
+
+            _backLightTimer.Elapsed += CheckLcdStatus;
+            _backLightTimer.Interval = TimeSpan.FromSeconds(30).TotalMilliseconds;
+            _backLightTimer.Start();
+        }
+
+        private void CheckLcdStatus(object sender, ElapsedEventArgs e)
+        {
+            if (_canTurnLcdScreenOff)
+            {
+                ToggleLcdBacklight(Enums.LcdBackLight.LightOff);
+            }
+            else
+            {
+                ToggleLcdBacklight(Enums.LcdBackLight.LightOn);
+            }
+        }
+
         private void CheckForTablet(object sender, ElapsedEventArgs e)
         {
             // if no tablet connected, set the flag and exit
-            if ( !sigPlusNET.TabletConnectQuery() )
+            if (!sigPlusNET.TabletConnectQuery())
             {
                 _serviceStartedAndTabletConnected = false;
                 return;
             }
 
             // if service is already running and tablet already connected, exit
-            if ( _serviceStartedAndTabletConnected ) return;
+            if (_serviceStartedAndTabletConnected) return;
 
             // start the service and init the tablet
-            if ( sigPlusNET.TabletConnectQuery() )
+            if (sigPlusNET.TabletConnectQuery())
             {
                 _serviceStartedAndTabletConnected = true;
                 var thread = new Thread(StartService);
@@ -229,6 +270,14 @@ namespace Topaz.LBK766
                 thread.IsBackground = true;
                 thread.Start();
             }
+        }
+
+        private void ToggleLcdBacklight(Enums.LcdBackLight lightStatus)
+        {
+            var toggle = new[] {(byte) lightStatus};
+            var result = new byte[20];
+            sigPlusNET.SetTabletState((int) Enums.TabletStateEnum.Capture);
+            sigPlusNET.LCDSendCmdData(toggle, 1, result, 250);
         }
     }
 }

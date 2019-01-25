@@ -41,5 +41,11 @@
             Logical = 0,
             Lcd = 1
         }
+
+        public enum LcdBackLight : byte
+        {
+            LightOn = 2,
+            LightOff = 3
+        }
     }
 }
